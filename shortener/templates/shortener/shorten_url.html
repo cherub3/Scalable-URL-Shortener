@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Shorten-url</title>
+        <meta name="description" content="">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        {% load static %}
+        <link rel="stylesheet" href="{% static 'css/styles.css' %}">
+    </head>
+    <body>
+        <div class="container">
+            <h1>URL Shortener</h1>
+            <form id="shortener-form">
+                <input type="url" name="url" id="url-input" placeholder="Enter URL" required>
+                <button type="submit" id="shorten-button">Shorten URL</button>
+            </form>
+            <div id="result" style="margin-top: 20px;"></div>
+        </div>
+        <script>
+            document.getElementById('shortener-form').addEventListener('submit', async function(event) {
+                event.preventDefault(); // Prevent the form from submitting normally
+                
+                const urlInput = document.getElementById('url-input').value;
+                const resultDiv = document.getElementById('result');
+                resultDiv.innerHTML = ''; // Clear previous results
+    
+                if (urlInput) {
+                    try {
+                        const response = await fetch('/', {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRFToken': getCookie('csrftoken') // Pass the CSRF token
+                            },
+                            body: JSON.stringify({ url: urlInput })
+                        });
+    
+                        if (response.ok) {
+                            const data = await response.json();
+                            resultDiv.innerHTML = `
+                                <p>Shortened URL: <a href="${data.shortened_url}" target="_blank">${data.shortened_url}</a></p>
+                            `;
+                        } else {
+                            resultDiv.innerHTML = '<p style="color: red;">Error: Unable to shorten URL.</p>';
+                        }
+                    } catch (error) {
+                        resultDiv.innerHTML = '<p style="color: red;">An error occurred. Please try again.</p>';
+                    }
+                } else {
+                    resultDiv.innerHTML = '<p style="color: red;">Please enter a valid URL.</p>';
+                }
+            });
+    
+            // Helper function to get CSRF token
+            function getCookie(name) {
+                const cookieValue = document.cookie.split('; ').find(row => row.startsWith(name + '='));
+                return cookieValue ? cookieValue.split('=')[1] : null;
+            }
+        </script>
+       {% if shortened_url %}
+        <p>Shortened URL: <a href="/{{ shortened_url }}">{{ shortened_url }}</a></p>
+        {% endif %}
+    </body>
+</html>
